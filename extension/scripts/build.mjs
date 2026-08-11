@@ -94,6 +94,9 @@ async function processIndexHtml() {
       ) ||
       /\brel\s*=\s*["'][^"']*\bicon\b[^"']*["']/.test(
         normalizedTag,
+      ) ||
+      /\brel\s*=\s*["'][^"']*\b(?:modulepreload|preload)\b[^"']*["']/.test(
+        normalizedTag,
       )
     ) {
       return ''
