@@ -1,0 +1,21 @@
+{
+  "manifest_version": 3,
+  "name": "Zashboard",
+  "version": "0.0.0",
+  "description": "Zashboard for Mihomo and sing-box",
+  "minimum_chrome_version": "116",
+  "icons": {
+    "192": "icons/icon-192.png"
+  },
+  "action": {
+    "default_title": "选择 Zashboard 后端",
+    "default_popup": "popup.html",
+    "default_icon": {
+      "192": "icons/icon-192.png"
+    }
+  },
+  "host_permissions": ["http://*/*", "https://*/*"],
+  "content_security_policy": {
+    "extension_pages": "script-src 'self'; object-src 'self'; connect-src 'self' http: https: ws: wss:;"
+  }
+}

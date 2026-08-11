@@ -1,0 +1,25 @@
+@import 'tailwindcss' source(none);
+
+@source './popup.html';
+@source './popup.js';
+
+@plugin 'daisyui' {
+  themes:
+    light --default,
+    dark --prefersdark;
+  exclude: rootscrollgutter;
+}
+
+@layer base {
+  html,
+  body {
+    width: 380px;
+    min-width: 380px;
+    margin: 0;
+    overflow: hidden;
+  }
+
+  body {
+    font-family: Inter, 'SF Pro Text', 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', sans-serif;
+  }
+}
