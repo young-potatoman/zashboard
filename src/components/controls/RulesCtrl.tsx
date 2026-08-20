@@ -7,12 +7,13 @@ import {
   updateRuleProviderAPI,
 } from '@/assembly/rules'
 import { useCtrlsBar } from '@/composables/useCtrlsBar'
-import { RULE_TAB_TYPE } from '@/constant'
+import { LIST_DISPLAY_STYLE, RULE_TAB_TYPE } from '@/constant'
 import { showNotification } from '@/helper/notification'
 import {
   disconnectOnRuleDisable,
   displayLatencyInRule,
   displayNowNodeInRule,
+  ruleDisplayStyle,
 } from '@/store/settings'
 import { ArrowPathIcon, WrenchScrewdriverIcon } from '@heroicons/vue/24/outline'
 import { computed, defineComponent, ref } from 'vue'
@@ -20,6 +21,7 @@ import { useI18n } from 'vue-i18n'
 import CtrlsBar from '../common/CtrlsBar.vue'
 import DialogWrapper from '../common/DialogWrapper.vue'
 import SegmentedControl from '../common/SegmentedControl.vue'
+import SelectInput from '../common/SelectInput.vue'
 import TextInput from '../common/TextInput.vue'
 
 export default defineComponent({
@@ -119,6 +121,20 @@ export default defineComponent({
           >
             <div class="flex flex-col gap-3 text-sm">
               <div class="settings-grid">
+                <div class="setting-item">
+                  <div class="setting-item-label">{t('ruleStyle')}</div>
+                  <SelectInput
+                    class="select select-sm min-w-24"
+                    modelValue={ruleDisplayStyle.value}
+                    onUpdate:modelValue={(value) =>
+                      (ruleDisplayStyle.value = value as LIST_DISPLAY_STYLE)
+                    }
+                    options={Object.values(LIST_DISPLAY_STYLE).map((value) => ({
+                      value,
+                      label: t(value),
+                    }))}
+                  />
+                </div>
                 <div class="setting-item">
                   <div class="setting-item-label">{t('displaySelectedNode')}</div>
                   <input

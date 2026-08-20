@@ -13,6 +13,7 @@
     .collapse,
     .input,
     .select,
+    .floating-menu-panel,
     .toggle,
     .settings-menu,
     .ctrls-bar,
@@ -81,6 +82,7 @@
     .settings-grid,
     .base-container,
     .btn,
+    .floating-menu-panel,
     .table thead {
       /* prettier-ignore */
       backdrop-filter: blur($(i)px);
@@ -90,9 +92,22 @@
       @apply bg-transparent! backdrop-blur-xl;
     }
 
-    /* 表格 tbody 不能直接 backdrop-filter（会切断 sticky 表头的层叠），改用伪元素铺一层 */
+    /*
+     * 表格 tbody 不能直接 backdrop-filter（会切断 sticky 表头的层叠），改用伪元素铺一层。
+     * tbody 本身默认是 static，没有 isolate 时 ::before 会向上找最近的定位祖先当containing
+     * block（连接表格因为行上有 transform 顺带形成了层叠上下文所以碰巧没事，日志/规则表格
+     * 没有这层 transform，::before 会一路找到很远的祖先甚至铺满整个页面顶部）；同时非定位的
+     * 行内容按绘制顺序本该先于 z-index:auto 的定位元素画出，会被 ::before 盖在最上面。
+     * 用 isolate 让 tbody 自己形成层叠上下文，::before 给负 z-index 沉到行背景下面即可。
+     */
+    .table tbody {
+      position: relative;
+      isolation: isolate;
+    }
+
     .table tbody::before {
       position: absolute;
+      z-index: -1;
       content: '';
       top: 0;
       left: 0;

@@ -1,27 +1,76 @@
 <template>
   <div class="base-container p-4">
-    <div class="flex items-center justify-between">
-      <div class="text-base-content/60 text-xs font-semibold tracking-wider uppercase">
-        {{ $t('connectionTopology') }}
-      </div>
-    </div>
-    <div class="bg-base-200/30 relative mt-4 h-96 w-full overflow-hidden rounded-xl">
-      <Teleport
-        to="body"
-        :disabled="!isFullScreen"
+    <Teleport
+      to="body"
+      :disabled="!isFullScreen"
+    >
+      <div
+        :class="
+          isFullScreen
+            ? [
+                'bg-base-100 custom-background fixed inset-0 z-[9999] flex h-screen w-screen flex-col bg-cover bg-center p-4',
+                `blur-intensity-${blurIntensity} custom-background-${dashboardTransparent}`,
+              ]
+            : undefined
+        "
+        :style="isFullScreen ? backgroundImage : undefined"
       >
+        <div class="flex items-center justify-between gap-2">
+          <div class="text-base-content/60 text-xs font-semibold tracking-wider uppercase">
+            {{ $t('connectionTopology') }}
+          </div>
+          <div class="flex items-center gap-1">
+            <label
+              class="text-base-content/60 flex cursor-pointer items-center gap-2 text-xs"
+              :title="t('applyConnectionFilter')"
+            >
+              <span class="hidden sm:inline">{{ $t('applyConnectionFilter') }}</span>
+              <input
+                v-model="topologyApplyConnectionFilter"
+                type="checkbox"
+                class="toggle"
+                :aria-label="t('applyConnectionFilter')"
+              />
+            </label>
+            <button
+              class="btn btn-ghost btn-sm btn-square"
+              :aria-label="t(isManuallyPaused ? 'topologyResume' : 'topologyPause')"
+              :title="t(isManuallyPaused ? 'topologyResume' : 'topologyPause')"
+              :aria-pressed="isManuallyPaused"
+              @click="isManuallyPaused = !isManuallyPaused"
+            >
+              <PlayIcon
+                v-if="isManuallyPaused"
+                class="h-4 w-4"
+              />
+              <PauseIcon
+                v-else
+                class="h-4 w-4"
+              />
+            </button>
+            <button
+              class="btn btn-ghost btn-sm btn-square"
+              :aria-label="t(isFullScreen ? 'topologyCollapse' : 'topologyExpand')"
+              :title="t(isFullScreen ? 'topologyCollapse' : 'topologyExpand')"
+              :aria-pressed="isFullScreen"
+              @click="isFullScreen = !isFullScreen"
+            >
+              <ArrowsPointingInIcon
+                v-if="isFullScreen"
+                class="h-4 w-4"
+              />
+              <ArrowsPointingOutIcon
+                v-else
+                class="h-4 w-4"
+              />
+            </button>
+          </div>
+        </div>
         <div
-          :class="
-            isFullScreen
-              ? [
-                  'bg-base-100 custom-background fixed inset-0 z-[9999] h-screen w-screen bg-cover bg-center',
-                  `blur-intensity-${blurIntensity} custom-background-${dashboardTransparent}`,
-                ]
-              : 'relative h-full w-full'
-          "
-          :style="isFullScreen ? backgroundImage : undefined"
+          class="bg-base-200/30 relative w-full overflow-hidden rounded-xl"
+          :class="isFullScreen ? 'mt-2 min-h-0 flex-1' : 'mt-4 h-96'"
+          data-page-swipe-ignore
           @mousemove.stop
-          @touchmove.stop
         >
           <div
             class="relative"
@@ -39,34 +88,9 @@
               {{ t('noData') }}
             </div>
           </div>
-          <div
-            class="right-1 bottom-1 flex flex-col gap-1"
-            :class="
-              isFullScreen ? 'fixed right-4 bottom-4 mb-[env(safe-area-inset-bottom)]' : 'absolute'
-            "
-          >
-            <button
-              class="btn btn-ghost btn-circle btn-sm"
-              @click="isManuallyPaused = !isManuallyPaused"
-            >
-              <component
-                :is="isManuallyPaused ? PlayCircleIcon : PauseCircleIcon"
-                class="h-4 w-4"
-              />
-            </button>
-            <button
-              class="btn btn-ghost btn-circle btn-sm"
-              @click="isFullScreen = !isFullScreen"
-            >
-              <component
-                :is="isFullScreen ? ArrowsPointingInIcon : ArrowsPointingOutIcon"
-                class="h-4 w-4"
-              />
-            </button>
-          </div>
         </div>
-      </Teleport>
-    </div>
+      </div>
+    </Teleport>
   </div>
 </template>
 
@@ -77,13 +101,17 @@ import { getConnectionChains, getConnectionRule, getConnectionSourceIP } from '@
 import { backgroundImage } from '@/helper/indexeddb'
 import { getIPLabelFromMap } from '@/helper/sourceip'
 import { isMiddleScreen } from '@/helper/utils'
-import { activeConnections } from '@/store/connections'
-import { blurIntensity, dashboardTransparent } from '@/store/settings'
+import { activeConnections, filteredActiveConnections } from '@/store/connections'
+import {
+  blurIntensity,
+  dashboardTransparent,
+  topologyApplyConnectionFilter,
+} from '@/store/settings'
 import {
   ArrowsPointingInIcon,
   ArrowsPointingOutIcon,
-  PauseCircleIcon,
-  PlayCircleIcon,
+  PauseIcon,
+  PlayIcon,
 } from '@heroicons/vue/24/outline'
 import { useWindowSize } from '@vueuse/core'
 import type { CSSProperties } from 'vue'
@@ -130,7 +158,10 @@ const chartSurfaceStyle = computed<CSSProperties>(() => {
 
 const topologyData = computed(() =>
   buildTopologyData(
-    activeConnections.value.map((connection) => ({
+    (topologyApplyConnectionFilter.value
+      ? filteredActiveConnections.value
+      : activeConnections.value
+    ).map((connection) => ({
       source: getIPLabelFromMap(getConnectionSourceIP(connection)),
       rule: getConnectionRule(connection),
       chains: getConnectionChains(connection),
@@ -150,15 +181,15 @@ const options = computed<EChartOption>(() => ({
   backgroundColor: 'transparent',
   textStyle: {
     fontFamily: fontFamily.value || 'inherit',
-    color: colors.baseContent,
+    color: colors.text,
   },
   tooltip: {
     trigger: 'item',
     triggerOn: 'mousemove',
-    backgroundColor: colors.base70,
-    borderColor: colors.baseContent30,
+    backgroundColor: colors.surface,
+    borderColor: colors.border,
     textStyle: {
-      color: colors.baseContent,
+      color: colors.text,
     },
     formatter: (params: unknown) => {
       const { dataType, data } = params as {
@@ -214,7 +245,7 @@ const options = computed<EChartOption>(() => ({
         borderWidth: 0,
       },
       label: {
-        color: colors.baseContent,
+        color: colors.text,
         fontSize: isMiddleScreen.value ? 10 : 12,
         formatter: (params: { name: string }) => {
           const maxLength = isFullScreen.value ? 45 : isMiddleScreen.value ? 20 : 30

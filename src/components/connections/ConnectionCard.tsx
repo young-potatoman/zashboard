@@ -11,6 +11,7 @@ import {
   PROXY_CHAIN_DIRECTION,
 } from '@/constant'
 import { getConnectionChains, getConnectionSmartBlock } from '@/helper'
+import { notifyRequestError } from '@/helper/requestError'
 import { connectionFilter, connectionTabShow, isClosedConnection } from '@/store/connections'
 import { connectionCardLines, proxyChainDirection, showFullProxyChain } from '@/store/settings'
 import type { Connection } from '@/types'
@@ -198,7 +199,7 @@ export default defineComponent<{
               class="btn btn-circle btn-xs"
               onClick={(e) => {
                 e.stopPropagation()
-                disconnectByIdAPI(conn.id)
+                disconnectByIdAPI(conn.id).catch(notifyRequestError)
               }}
             >
               <XMarkIcon class="h-4 w-4" />
@@ -211,7 +212,7 @@ export default defineComponent<{
                 class="btn btn-circle btn-xs"
                 onClick={(e) => {
                   e.stopPropagation()
-                  blockConnectionByIdAPI(conn.id)
+                  blockConnectionByIdAPI(conn.id).catch(notifyRequestError)
                 }}
               >
                 <NoSymbolIcon class="h-4 w-4" />
@@ -234,9 +235,7 @@ export default defineComponent<{
 
       return (
         <div
-          class={[
-            'scroller-item text-base-content/65 flex cursor-pointer flex-col gap-1 px-3 py-2',
-          ]}
+          class="text-base-content/65 flex cursor-pointer flex-col gap-1 px-3 py-2"
           onClick={() => handlerInfo(conn)}
         >
           {connectionCardLines.value.map((line) => (

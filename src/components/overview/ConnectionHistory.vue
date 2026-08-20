@@ -26,42 +26,33 @@
       >
         <div class="flex items-center gap-2">
           <span class="text-base-content/60 text-xs">{{ $t('aggregateBy') }}</span>
-          <select
+          <SelectInput
             v-model="aggregationType"
             class="select select-bordered select-sm w-32"
-          >
-            <option :value="ConnectionHistoryType.SourceIP">
-              {{ $t('aggregateBySourceIP') }}
-            </option>
-            <option :value="ConnectionHistoryType.Destination">
-              {{ $t('aggregateByDestination') }}
-            </option>
-            <option :value="ConnectionHistoryType.Process">{{ $t('aggregateByProcess') }}</option>
-            <option :value="ConnectionHistoryType.Outbound">
-              {{ $t('aggregateByOutbound') }}
-            </option>
-            <option :value="ConnectionHistoryType.ProxyGroup">
-              {{ $t('aggregateByProxyGroup') }}
-            </option>
-          </select>
+            :options="[
+              { value: ConnectionHistoryType.SourceIP, label: $t('aggregateBySourceIP') },
+              {
+                value: ConnectionHistoryType.Destination,
+                label: $t('aggregateByDestination'),
+              },
+              { value: ConnectionHistoryType.Process, label: $t('aggregateByProcess') },
+              { value: ConnectionHistoryType.Outbound, label: $t('aggregateByOutbound') },
+              { value: ConnectionHistoryType.ProxyGroup, label: $t('aggregateByProxyGroup') },
+            ]"
+          />
         </div>
         <div class="flex items-center gap-2">
           <span class="text-base-content/60 text-xs">{{ $t('autoCleanupInterval') }}</span>
-          <select
+          <SelectInput
             v-model="autoCleanupInterval"
             class="select select-bordered select-sm w-28"
-          >
-            <option :value="AutoCleanupInterval.Never">
-              {{ $t('autoCleanupIntervalNever') }}
-            </option>
-            <option :value="AutoCleanupInterval.Week">{{ $t('autoCleanupIntervalWeek') }}</option>
-            <option :value="AutoCleanupInterval.Month">
-              {{ $t('autoCleanupIntervalMonth') }}
-            </option>
-            <option :value="AutoCleanupInterval.Quarter">
-              {{ $t('autoCleanupIntervalQuarter') }}
-            </option>
-          </select>
+            :options="[
+              { value: AutoCleanupInterval.Never, label: $t('autoCleanupIntervalNever') },
+              { value: AutoCleanupInterval.Week, label: $t('autoCleanupIntervalWeek') },
+              { value: AutoCleanupInterval.Month, label: $t('autoCleanupIntervalMonth') },
+              { value: AutoCleanupInterval.Quarter, label: $t('autoCleanupIntervalQuarter') },
+            ]"
+          />
         </div>
       </div>
     </div>
@@ -109,9 +100,6 @@
     <div
       ref="parentRef"
       class="h-96 overflow-auto"
-      @touchstart.passive.stop
-      @touchmove.passive.stop
-      @touchend.passive.stop
     >
       <div :style="{ height: `${totalSize}px` }">
         <table class="table-sm table w-full rounded-none">
@@ -149,7 +137,7 @@
                 height: `${virtualRow.size}px`,
                 transform: `translateY(${virtualRow.start - index * virtualRow.size}px)`,
               }"
-              class="hover:bg-primary! hover:text-primary-content whitespace-nowrap"
+              class="hover:bg-primary/85! hover:text-primary-content whitespace-nowrap"
               :class="virtualRow.index % 2 === 1 && 'bg-base-150'"
             >
               <td
@@ -196,8 +184,10 @@
 
 <script setup lang="ts">
 import { ConnectionHistoryType } from '@/helper/indexeddb'
+import SelectInput from '@/components/common/SelectInput.vue'
 import { showNotification } from '@/helper/notification'
 import { getIPLabelFromMap } from '@/helper/sourceip'
+import { useStorage } from '@/helper/storage'
 import { useTooltip } from '@/helper/tooltip'
 import { prettyBytesHelper } from '@/helper/utils'
 import {
@@ -222,7 +212,6 @@ import {
   type SortingState,
 } from '@tanstack/vue-table'
 import { useVirtualizer } from '@tanstack/vue-virtual'
-import { useStorage } from '@vueuse/core'
 import dayjs from 'dayjs'
 import { computed, h, onMounted, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
@@ -393,7 +382,16 @@ const autoCleanupInterval = useStorage<AutoCleanupInterval>(
   'config/connection-history-auto-cleanup-interval',
   AutoCleanupInterval.Month,
 )
-const startTime = useStorage<number>('cache/connection-history-stats-start-time', Date.now())
+// 这是统计起始时间戳,首次访问就要落盘固定下来,否则每次刷新都会被视为"刚开始统计",
+// 自动清理永远不会触发 —— 与其他纯 UI 偏好不同,这里需要保留 writeDefaults
+const startTime = useStorage<number>(
+  'cache/connection-history-stats-start-time',
+  Date.now(),
+  undefined,
+  {
+    writeDefaults: true,
+  },
+)
 const totalConnectionsTip = computed(() => {
   const dayjsTime = dayjs(startTime.value)
 
